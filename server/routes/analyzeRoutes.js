@@ -1,6 +1,9 @@
 import express from "express";
 // ייבוא שתי הפונקציות מהקונטרולר
-import { analyzeLink, reportAndTrain } from "../controllers/analyzeController.js";
+import {
+  analyzeLink,
+  reportAndTrain,
+} from "../controllers/analyzeController.js";
 
 const router = express.Router();
 

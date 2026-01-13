@@ -1,9 +1,12 @@
-import 'dotenv/config';
-import { spawn } from 'child_process';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import OpenAI from 'openai';
-import { getSystemPrompt, getUserPrompt } from '../utils/prompts/analyzerPrompts.js';
+import "dotenv/config";
+import { spawn } from "child_process";
+import path from "path";
+import { fileURLToPath } from "url";
+import OpenAI from "openai";
+import {
+  getSystemPrompt,
+  getUserPrompt,
+} from "../utils/prompts/analyzerPrompts.js";
 
 // הגדרת __dirname ל־ESM
 const __filename = fileURLToPath(import.meta.url);
@@ -22,31 +25,31 @@ async function getRiskScoreFromModel(url) {
   return new Promise((resolve) => {
     const pythonScriptPath = path.join(
       __dirname,
-      '..',
-      'XGBOOST_model',
-      'predict_server.py'
+      "..",
+      "XGBOOST_model",
+      "predict_server.py"
     );
 
-    const pythonProcess = spawn('python', [pythonScriptPath, url]);
+    const pythonProcess = spawn("python", [pythonScriptPath, url]);
 
-    let resultData = '';
-    let errorData = '';
+    let resultData = "";
+    let errorData = "";
 
-    pythonProcess.stdout.on('data', (data) => {
+    pythonProcess.stdout.on("data", (data) => {
       resultData += data.toString();
     });
 
-    pythonProcess.stderr.on('data', (data) => {
+    pythonProcess.stderr.on("data", (data) => {
       errorData += data.toString();
     });
 
-    pythonProcess.on('close', (code) => {
+    pythonProcess.on("close", (code) => {
       if (errorData) {
-        console.log('[Python logs]:\n', errorData);
+        console.log("[Python logs]:\n", errorData);
       }
 
       if (code !== 0) {
-        console.error('Python script failed');
+        console.error("Python script failed");
         return resolve(0);
       }
 
@@ -66,7 +69,7 @@ export const analyzeLink = async (req, res) => {
     if (!message) {
       return res.status(400).json({
         success: false,
-        message: 'No message provided',
+        message: "No message provided",
       });
     }
 
@@ -78,10 +81,10 @@ export const analyzeLink = async (req, res) => {
         success: true,
         data: {
           advice: {
-            summary: 'לא זיהיתי לינק בהודעה. נסי להדביק כתובת מלאה.',
+            summary: "Failed to find any URL in the message.",
           },
           result: {
-            verdict: 'safe',
+            verdict: "safe",
             reasons: [],
           },
         },
@@ -92,18 +95,17 @@ export const analyzeLink = async (req, res) => {
 
     // --- שלב 1: XGBoost ---
     const riskScore = await getRiskScoreFromModel(targetUrl);
-   
 
     // --- שלב 2: OpenAI Responses API ---
     const response = await openai.responses.create({
-      model: 'gpt-4.1-mini',
+      model: "gpt-4.1-mini",
       input: [
         {
-          role: 'system',
+          role: "system",
           content: getSystemPrompt(),
         },
         {
-          role: 'user',
+          role: "user",
           content: getUserPrompt(targetUrl, riskScore),
         },
       ],
@@ -111,20 +113,20 @@ export const analyzeLink = async (req, res) => {
 
     let outputText = response.output_text;
 
-// ניקוי עטיפת Markdown אם קיימת
-outputText = outputText
-  .replace(/```json\s*/i, '') // מסיר ```json אם יש
-  .replace(/```/g, '')        // מסיר ``` סגירה
-  .trim();                     // מסיר רווחים מיותרים
+    // ניקוי עטיפת Markdown אם קיימת
+    outputText = outputText
+      .replace(/```json\s*/i, "") // מסיר ```json אם יש
+      .replace(/```/g, "") // מסיר ``` סגירה
+      .trim(); // מסיר רווחים מיותרים
 
-let aiAnalysis;
-try {
-  aiAnalysis = JSON.parse(outputText);
-} catch  {
-  console.error('AI returned invalid JSON');
-  console.error('Raw output:', outputText);
-  throw new Error('AI response parsing failed');
-}
+    let aiAnalysis;
+    try {
+      aiAnalysis = JSON.parse(outputText);
+    } catch {
+      console.error("AI returned invalid JSON");
+      console.error("Raw output:", outputText);
+      throw new Error("AI response parsing failed");
+    }
 
     // --- שלב 3: החזרת תשובה לקליינט ---
     return res.status(200).json({
@@ -143,10 +145,10 @@ try {
       },
     });
   } catch (error) {
-    console.error('Analyze Critical Error:', error.message);
+    console.error("Analyze Critical Error:", error.message);
     return res.status(500).json({
       success: false,
-      message: 'שגיאה בניתוח ההודעה. נסי שוב בעוד רגע.',
+      message: "Server error during link analysis",
     });
   }
 };
@@ -160,47 +162,43 @@ export const reportAndTrain = async (req, res) => {
   if (!url) {
     return res.status(400).json({
       success: false,
-      message: 'No URL provided',
+      message: "No URL provided",
     });
   }
 
   const pythonScriptPath = path.join(
     __dirname,
-    '..',
-    'XGBOOST_model',
-    'retrain.py'
+    "..",
+    "XGBOOST_model",
+    "retrain.py"
   );
 
-  const label = isMalicious ? '1' : '0';
+  const label = isMalicious ? "1" : "0";
 
   try {
-    const pythonProcess = spawn('python', [
-      pythonScriptPath,
-      url,
-      label,
-    ]);
+    const pythonProcess = spawn("python", [pythonScriptPath, url, label]);
 
-    let resultData = '';
-    pythonProcess.stdout.on('data', (data) => {
+    let resultData = "";
+    pythonProcess.stdout.on("data", (data) => {
       resultData += data.toString();
     });
 
-    pythonProcess.on('close', () => {
+    pythonProcess.on("close", () => {
       try {
         const jsonRes = JSON.parse(resultData);
         return res.status(200).json({ success: true, data: jsonRes });
       } catch {
         return res.status(200).json({
           success: true,
-          message: 'הדיווח התקבל והמודל עודכן',
+          message: "the report has been recieved,",
         });
       }
     });
   } catch (err) {
-    console.error('Retrain error:', err.message);
+    console.error("Retrain error:", err.message);
     return res.status(500).json({
       success: false,
-      message: 'Server error during retrain',
+      message: "Server error during retrain",
     });
   }
 };

@@ -1,14 +1,22 @@
-import styles from './Home.module.css';
-import RandomDuck from '../../components/RandomDuck/RandomDuck.jsx';
+import { Link } from "react-router-dom";
 
-
-const Home = () => {
+export default function HomePage() {
   return (
-    <div className={styles.home}>
-      <h1 className={styles.headline}>Duck It</h1>
-      <RandomDuck />
+    <div className="min-h-screen flex flex-col items-center justify-center text-center space-y-6">
+      <h1 className="text-5xl font-extrabold gradient-text">PrivacyShield</h1>
+
+      <p className="text-slate-700 max-w-xl">
+        AI-powered tools to help you stay safe online.
+      </p>
+
+      <div className="flex gap-4">
+        <Link to="/staysafe" className="btn-primary">
+          StaySafe Scanner
+        </Link>
+        <Link to="/consult-ai" className="btn-secondary">
+          Consult AI
+        </Link>
+      </div>
     </div>
   );
-};
-
-export default Home;
+}

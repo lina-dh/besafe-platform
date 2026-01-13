@@ -6,5 +6,9 @@
   "https://web.whatsapp.com": {
     "safe": 1,
     "malicious": 0
+  },
+  "https://www.canva.com/design/DAG-Ic8hp2E/ZnEGp2oxPdNttvrXQeZymQ/edit?ui=e30": {
+    "safe": 0,
+    "malicious": 1
   }
 }

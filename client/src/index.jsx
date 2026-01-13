@@ -2,14 +2,12 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import "./styles/global.css";
 import App from "./App.jsx";
-import { DuckProvider } from "./context/DuckContext";
+import { LanguageProvider } from "./context/LanguageContext";
 
-const root = ReactDOM.createRoot(document.getElementById("root"));
-root.render(
+ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
-    {/* DuckProvider stays for now to avoid breaking template logic */}
-    <DuckProvider>
+    <LanguageProvider>
       <App />
-    </DuckProvider>
+    </LanguageProvider>
   </React.StrictMode>
 );
