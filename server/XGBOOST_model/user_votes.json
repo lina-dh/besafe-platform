@@ -10,5 +10,9 @@
   "https://www.canva.com/design/DAG-Ic8hp2E/ZnEGp2oxPdNttvrXQeZymQ/edit?ui=e30": {
     "safe": 0,
     "malicious": 1
+  },
+  "https://mail.google.com/mail/u/0/?tab=rm&ogbl#inbox/FMfcgzQdzwBXrnmSZrbQkMBLmsMcxPMW": {
+    "safe": 0,
+    "malicious": 2
   }
 }
