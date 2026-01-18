@@ -7,15 +7,17 @@ import {
   getSystemPrompt,
   getUserPrompt,
 } from "../utils/prompts/analyzerPrompts.js";
+import { LINK_ANALYZER_MOCK } from "../utils/prompts/mockResponse.js";
 
-// הגדרת __dirname ל־ESM
+// Define __dirname for ESM
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// אתחול OpenAI
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+// Helper: only treat as "real mode" if key looks like a real OpenAI key
+function hasValidOpenAiKey() {
+  const key = (process.env.OPENAI_API_KEY || "").trim();
+  return key.startsWith("sk-");
+}
 
 /**
  * פונקציית עזר: הרצת מודל XGBoost (Python)
@@ -27,7 +29,7 @@ async function getRiskScoreFromModel(url) {
       __dirname,
       "..",
       "XGBOOST_model",
-      "predict_server.py"
+      "predict_server.py",
     );
 
     const pythonProcess = spawn("python", [pythonScriptPath, url]);
@@ -60,7 +62,7 @@ async function getRiskScoreFromModel(url) {
 }
 
 /**
- * ניתוח לינק: XGBoost + LLM
+ * Link analysis: XGBoost + LLM (with demo fallback if no API key)
  */
 export const analyzeLink = async (req, res) => {
   try {
@@ -79,45 +81,57 @@ export const analyzeLink = async (req, res) => {
     if (!urls) {
       return res.status(200).json({
         success: true,
+        isMock: false,
         data: {
-          advice: {
-            summary: "Failed to find any URL in the message.",
-          },
-          result: {
-            verdict: "safe",
-            reasons: [],
-          },
+          advice: { summary: "Failed to find any URL in the message." },
+          result: { verdict: "safe", reasons: [] },
         },
       });
     }
 
     const targetUrl = urls[0];
 
-    // --- שלב 1: XGBoost ---
+    // Step 1: XGBoost risk score
     const riskScore = await getRiskScoreFromModel(targetUrl);
 
-    // --- שלב 2: OpenAI Responses API ---
+    // Demo mode: no valid API key => return a mock analysis (still includes real riskScore)
+    if (!hasValidOpenAiKey()) {
+      const mock = LINK_ANALYZER_MOCK(targetUrl);
+
+      return res.status(200).json({
+        success: true,
+        isMock: true,
+        data: {
+          input: { url: targetUrl },
+          result: {
+            riskScore,
+            verdict: mock.verdict,
+            reasons: mock.reasons,
+          },
+          advice: {
+            summary: mock.summary,
+            twoQuickSteps: mock.twoQuickSteps,
+          },
+        },
+      });
+    }
+
+    // Step 2: OpenAI call
+    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY.trim() });
+
     const response = await openai.responses.create({
       model: "gpt-4.1-mini",
       input: [
-        {
-          role: "system",
-          content: getSystemPrompt(),
-        },
-        {
-          role: "user",
-          content: getUserPrompt(targetUrl, riskScore),
-        },
+        { role: "system", content: getSystemPrompt() },
+        { role: "user", content: getUserPrompt(targetUrl, riskScore) },
       ],
     });
 
-    let outputText = response.output_text;
-
-    // ניקוי עטיפת Markdown אם קיימת
-    outputText = outputText
-      .replace(/```json\s*/i, "") // מסיר ```json אם יש
-      .replace(/```/g, "") // מסיר ``` סגירה
-      .trim(); // מסיר רווחים מיותרים
+    let outputText = (response.output_text || "")
+      // Remove Markdown JSON fences if present
+      .replace(/```json\s*/i, "")
+      .replace(/```/g, "")
+      .trim();
 
     let aiAnalysis;
     try {
@@ -128,13 +142,14 @@ export const analyzeLink = async (req, res) => {
       throw new Error("AI response parsing failed");
     }
 
-    // --- שלב 3: החזרת תשובה לקליינט ---
+    // Step 3: Return response to the client
     return res.status(200).json({
       success: true,
+      isMock: false,
       data: {
         input: { url: targetUrl },
         result: {
-          riskScore: riskScore,
+          riskScore,
           verdict: aiAnalysis.verdict,
           reasons: aiAnalysis.reasons,
         },
@@ -146,15 +161,44 @@ export const analyzeLink = async (req, res) => {
     });
   } catch (error) {
     console.error("Analyze Critical Error:", error.message);
-    return res.status(500).json({
-      success: false,
-      message: "Server error during link analysis",
-    });
+
+    // Optional: fallback to mock mode even if OpenAI fails (quota/network/etc.)
+    // Keeps the demo working instead of returning a 500.
+    try {
+      const { message } = req.body || {};
+      const urlRegex = /(https?:\/\/[^\s]+)/g;
+      const urls = message?.match?.(urlRegex);
+      const targetUrl = urls?.[0] || "the provided link";
+
+      const mock = LINK_ANALYZER_MOCK(targetUrl);
+
+      return res.status(200).json({
+        success: true,
+        isMock: true,
+        data: {
+          input: { url: targetUrl },
+          result: {
+            riskScore: 0,
+            verdict: mock.verdict,
+            reasons: mock.reasons,
+          },
+          advice: {
+            summary: mock.summary,
+            twoQuickSteps: mock.twoQuickSteps,
+          },
+        },
+      });
+    } catch {
+      return res.status(500).json({
+        success: false,
+        message: "Server error during link analysis",
+      });
+    }
   }
 };
 
 /**
- * דיווח ואימון מחדש
+ * Reporting and retraining
  */
 export const reportAndTrain = async (req, res) => {
   const { url, isMalicious } = req.body;
@@ -170,9 +214,8 @@ export const reportAndTrain = async (req, res) => {
     __dirname,
     "..",
     "XGBOOST_model",
-    "retrain.py"
+    "retrain.py",
   );
-
   const label = isMalicious ? "1" : "0";
 
   try {
@@ -190,7 +233,7 @@ export const reportAndTrain = async (req, res) => {
       } catch {
         return res.status(200).json({
           success: true,
-          message: "the report has been recieved,",
+          message: "The report has been received.",
         });
       }
     });
