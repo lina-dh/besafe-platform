@@ -70,7 +70,7 @@ This creates a chat experience that feels responsive and “aware”, without im
 
 ```text
 besafe-platform/
-├── client/                 # React frontend
+├── client/                 // React frontend
 │   ├── src/
 │   │   ├── components/
 │   │   ├── pages/
@@ -79,7 +79,7 @@ besafe-platform/
 │   │   └── assets/
 │   └── index.html
 │
-├── server/                 # Express backend
+├── server/                 // Express backend
 │   ├── controllers/
 │   ├── routes/
 │   ├── utils/
@@ -88,17 +88,24 @@ besafe-platform/
 │   └── .env.example
 │
 └── README.md
+```
 
 ---
 
-## Installation
+## ⚙️ Installation
 
 ### Prerequisites
 
-- [Node.js](https://nodejs.org/en)
-  - Version 20.x or higher required (latest LTS recommended)
-- `npm` (will be typically installed automatically when you install Node.js above)
-  - Version 10.x or higher required (get the latest by running `npm install -g npm@latest --no-optional`)
+- **Node.js**
+  Version 20.x or higher (latest LTS recommended)
+  https://nodejs.org/en
+
+- **npm**
+  Version 10.x or higher
+  Update with:
+  ```bash
+  npm install -g npm@latest --no-optional
+  ```
 
 ### Clone the Repository
 
@@ -130,7 +137,7 @@ Environment variables are used to configure your application without hardcoding 
 Make a copy of the `.env.example` file under the `server` folder and name it `.env`. This file contains the following environment variables:
 
 - `CLIENT_URL` - this should match the URL of the client, which is what you'll see at the address bar of your browser after running your client (via `npm start`).
-`PORT=your_server_port_here // Example: 5000
+  `PORT=your_server_port_here // Example: 5000
 CLIENT_URL=your_client_url_here // Example: http://localhost:3000
 OPENAI_API_KEY=your_openai_api_key_here`
 
@@ -140,7 +147,3 @@ Make a copy of the `.env.example` file under the `client` folder and name it `.e
 This file contains the following environment variable (you don't need to touch them at this point):
 
 - `VITE_SERVER_API_URL`: This variable contains the URL of your backend API. It tells your client where to send requests to interact with the server. By default, this should be set to http://localhost:5000/, but you should change it to match your server's actual URL if different (where 5000 is the `PORT` you defined in the server `.env` file above).
-
-```
-
----
