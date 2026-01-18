@@ -89,6 +89,7 @@ besafe-platform/
 │
 └── README.md
 
+---
 
 ## Installation
 
@@ -116,6 +117,8 @@ besafe-platform/
 2. Install client dependencies: `npm install`
 3. Run command: `npm run dev`
 
+---
+
 ## Configuration
 
 ### Environment Variables
@@ -139,3 +142,5 @@ This file contains the following environment variable (you don't need to touch t
 - `VITE_SERVER_API_URL`: This variable contains the URL of your backend API. It tells your client where to send requests to interact with the server. By default, this should be set to http://localhost:5000/, but you should change it to match your server's actual URL if different (where 5000 is the `PORT` you defined in the server `.env` file above).
 
 ```
+
+---
