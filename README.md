@@ -89,6 +89,7 @@ besafe-platform/
 │
 └── README.md
 
+---
 
 ## Installation
 
@@ -115,6 +116,8 @@ besafe-platform/
 1. Navigate to the client directory: `cd ../client`
 2. Install client dependencies: `npm install`
 3. Run command: `npm run dev`
+
+---
 
 ## Configuration
 
