@@ -20,8 +20,8 @@ function hasValidOpenAiKey() {
 }
 
 /**
- * פונקציית עזר: הרצת מודל XGBoost (Python)
- * מחזירה מספר בין 0 ל־1
+ * Helper: run the XGBoost model (Python)
+ * Returns a number between 0 and 1
  */
 async function getRiskScoreFromModel(url) {
   return new Promise((resolve) => {
