@@ -36,6 +36,18 @@ The AI component was built by:
 
 This creates a chat experience that feels responsive and “aware”, without implementing heavy backend state or model training logic.
 
+**My Key Contributions (Lina Dietrich Hosman):**
+
+While the platform utilizes an LLM for conversational flow, I led the initiative to give the product a deeper analytical "edge" by building an independent, robust risk-scoring engine. My core contributions include:
+
+<u>Hybrid AI Architecture:</u> Identified the product risk of functioning merely as an "LLM wrapper" and designed a multi-layered approach to ensure independent control over the risk-detection logic.
+
+<u>Model Development:</u> Independently researched and trained an XGBoost model using a Kaggle dataset to accurately classify URL risks (Process fully documented in the included Jupyter Notebook).
+
+<u>System Integration:</u> Successfully integrated the trained ML model directly into the application's environment.
+
+<u>Dynamic Feedback Loop:</u> Designed the business logic for a weighted scoring system that incorporates manual user reporting, allowing the final risk score to continuously adjust and improve based on real user interactions.
+
 ---
 
 ## 🛠️ Tech Stack
